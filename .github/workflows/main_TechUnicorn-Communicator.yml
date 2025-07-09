@@ -53,5 +53,5 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: publish.zip
+          package: Source/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
