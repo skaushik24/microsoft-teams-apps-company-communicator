@@ -29,7 +29,8 @@ jobs:
           npm install
           npm run build
 
-      - name: 📁 Clean + copy React build to wwwroot
+      - name: 📁 Copy React build to wwwroot
+        # This step places the React build into the wwwroot folder within your .NET project structure.
         run: |
           $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
           if (Test-Path $wwwrootPath) {
@@ -39,30 +40,37 @@ jobs:
           Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination $wwwrootPath -Recurse -Force
 
       - name: 🔨 Publish .NET project
+        # Publishes the .NET project, including the wwwroot copied in the previous step.
         working-directory: Source/CompanyCommunicator
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 📁 Ensure React build is in publish output
+      - name: 🧩 Copy React into publish output (Redundant but safe check)
+        # This step ensures that even if dotnet publish didn't fully include wwwroot,
+        # the React build is explicitly copied into the final output directory.
         run: |
-          $sourceWwwroot = "Source/CompanyCommunicator/wwwroot"
-          $destinationWwwroot = "Source/CompanyCommunicator/output/wwwroot"
-          if (-not (Test-Path $destinationWwwroot)) {
-            New-Item -ItemType Directory -Path $destinationWwwroot
+          $src = "Source/CompanyCommunicator/wwwroot"
+          $dst = "Source/CompanyCommunicator/output/wwwroot"
+          if (-Not (Test-Path $dst)) {
+            New-Item -ItemType Directory -Path $dst
           }
-          Remove-Item -Recurse -Force "$destinationWwwroot\*" -ErrorAction SilentlyContinue
-          Copy-Item -Path "$sourceWwwroot\*" -Destination $destinationWwwroot -Recurse -Force
+          Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
+          Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
 
-      - name: 📦 Zip publish output (flattened for Azure)
-        run: Compress-Archive -Path Source/CompanyCommunicator/output/* -DestinationPath publish.zip
+      - name: 🔍 Check contents before zipping
+        # Debugging step to verify the contents of the 'output' directory before zipping.
+        run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
 
-      - name: ✅ Confirm ZIP contents (debug)
-        run: |
-          Expand-Archive -Path publish.zip -DestinationPath tempZipCheck
-          Get-ChildItem -Path tempZipCheck -Recurse
+      - name: 📦 Create deployable ZIP
+        # CRITICAL CHANGE: Zip the *contents* of the 'output' directory.
+        # This ensures 'wwwroot' and other app files are at the root of the zip,
+        # which is expected by Azure Web Apps.
+        working-directory: Source/CompanyCommunicator/output
+        run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
 
       - name: 🚀 Deploy to Azure Web App
+        # Deploys the created publish.zip to your Azure Web App.
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: publish.zip
+          package: Source/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
