@@ -17,28 +17,28 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      - name: 🧱 Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+      # - name: 🧱 Setup Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '18'
 
       - name: ❌ Remove old lock file
         run: Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
 
-      - name: ⚛️ Build React frontend
-        working-directory: Source/CompanyCommunicator/ClientApp
-        run: |
-          npm install --force
-          npm run build
+      # - name: ⚛️ Build React frontend
+      #   working-directory: Source/CompanyCommunicator/ClientApp
+      #   run: |
+      #     npm install --force
+      #     npm run build
 
-      - name: 📁 Copy React build to wwwroot
-        run: |
-          $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
-          if (Test-Path $wwwrootPath) {
-            Remove-Item -Recurse -Force $wwwrootPath
-          }
-          New-Item -ItemType Directory -Path $wwwrootPath
-          Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination $wwwrootPath -Recurse -Force
+      # - name: 📁 Copy React build to wwwroot
+      #   run: |
+      #     $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
+      #     if (Test-Path $wwwrootPath) {
+      #       Remove-Item -Recurse -Force $wwwrootPath
+      #     }
+      #     New-Item -ItemType Directory -Path $wwwrootPath
+      #     Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination $wwwrootPath -Recurse -Force
 
       - name: 🔨 Publish .NET project
         working-directory: Source/CompanyCommunicator
