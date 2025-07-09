@@ -54,10 +54,10 @@ jobs:
       #     Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
       #     Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
 
-      - name: 🔍 Debug contents before zipping
-        run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
-      - name: 🔍 Debug contents wwroot before zipping
-        run: Get-ChildItem -Path Source/CompanyCommunicator/output/wwwroot -Recurse
+      # - name: 🔍 Debug contents before zipping
+      #   run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
+      # - name: 🔍 Debug contents wwroot before zipping
+      #   run: Get-ChildItem -Path Source/CompanyCommunicator/output/wwwroot -Recurse
         
       - name: 📦 Create ZIP for deployment
         working-directory: Source/CompanyCommunicator/output/wwwroot
@@ -67,7 +67,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/CompanyCommunicator/output/publish.zip
+          package: Source/CompanyCommunicator/output/wwwroot/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
   # set-oryx-flag:
