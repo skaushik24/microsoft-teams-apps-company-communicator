@@ -18,9 +18,12 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      - name: Build the project
+      - name: Build and publish the project
         working-directory: Source/CompanyCommunicator
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -r win-x64 --self-contained true -o ./output
+
+      - name: List output folder contents (for debug)
+        run: dir Source\CompanyCommunicator\output /s
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
