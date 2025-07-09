@@ -44,22 +44,24 @@ jobs:
         working-directory: Source/CompanyCommunicator
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 🧩 Copy React into publish output
-        run: |
-          $src = "Source/CompanyCommunicator/wwwroot"
-          $dst = "Source/CompanyCommunicator/output/wwwroot"
-          if (-Not (Test-Path $dst)) {
-            New-Item -ItemType Directory -Path $dst
-          }
-          Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
-          Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
+      # - name: 🧩 Copy React into publish output
+      #   run: |
+      #     $src = "Source/CompanyCommunicator/wwwroot"
+      #     $dst = "Source/CompanyCommunicator/output/wwwroot"
+      #     if (-Not (Test-Path $dst)) {
+      #       New-Item -ItemType Directory -Path $dst
+      #     }
+      #     Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
+      #     Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
 
       - name: 🔍 Debug contents before zipping
         run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
-
+      - name: 🔍 Debug contents wwroot before zipping
+        run: Get-ChildItem -Path Source/CompanyCommunicator/output/wwwroot -Recurse
+        
       - name: 📦 Create ZIP for deployment
         working-directory: Source/CompanyCommunicator/output
-        run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
+        run: Compress-Archive -Path * -DestinationPath ../publish.zip -Force
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
@@ -68,15 +70,15 @@ jobs:
           package: Source/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
-  set-oryx-flag:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: ✅ Disable Oryx so ZIP is extracted
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp config appsettings set \
-              --name TechUnicorn-Communicator \
-              --resource-group companycomm-tu-dev-rg \
-              --settings ENABLE_ORYX_BUILD=false
+  # set-oryx-flag:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - name: ✅ Disable Oryx so ZIP is extracted
+  #       uses: azure/CLI@v1
+  #       with:
+  #         inlineScript: |
+  #           az webapp config appsettings set \
+  #             --name TechUnicorn-Communicator \
+  #             --resource-group companycomm-tu-dev-rg \
+  #             --settings ENABLE_ORYX_BUILD=false
