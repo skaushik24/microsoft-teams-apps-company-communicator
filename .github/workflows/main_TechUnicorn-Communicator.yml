@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: 🧾 Checkout code
         uses: actions/checkout@v3
@@ -62,7 +61,18 @@ jobs:
         working-directory: Source/CompanyCommunicator/output
         run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
 
-      - name: 🚫 Disable Oryx to extract zip to wwwroot
+      - name: 🚀 Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: TechUnicorn-Communicator
+          package: Source/publish.zip
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+
+  set-oryx-flag:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: ✅ Disable Oryx so ZIP is extracted
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -70,10 +80,3 @@ jobs:
               --name TechUnicorn-Communicator \
               --resource-group companycomm-tu-dev-rg \
               --settings ENABLE_ORYX_BUILD=false
-
-      - name: 🚀 Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: TechUnicorn-Communicator
-          package: Source/publish.zip
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
