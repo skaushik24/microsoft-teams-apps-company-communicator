@@ -42,12 +42,16 @@ jobs:
         run: |
           dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 🧪 List output contents (debug)
+      - name: 📁 List output contents (debug)
         run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
+
+      - name: 📦 Zip publish output
+        working-directory: Source/CompanyCommunicator/output
+        run: Compress-Archive -Path * -DestinationPath ../../publish.zip
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/CompanyCommunicator/output
+          package: publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
