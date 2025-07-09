@@ -28,3 +28,4 @@ jobs:
           app-name: TechUnicorn-Communicator
           package: Source/CompanyCommunicator/output
           publish-profile: ${{ secrets.AzureAppService_PublishProfile }}
+          slot-name: production
