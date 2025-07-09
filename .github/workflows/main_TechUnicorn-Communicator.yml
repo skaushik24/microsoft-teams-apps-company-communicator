@@ -20,11 +20,11 @@ jobs:
 
       - name: Build the project
         working-directory: Source/CompanyCommunicator.App
-        run: dotnet publish -c Release -o ./output
+        run: dotnet publish -c Release -o ../../publish
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/CompanyCommunicator.App/output
+          package: publish
           publish-profile: ${{ secrets.AzureAppService_PublishProfile }}
