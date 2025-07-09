@@ -18,14 +18,15 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
+      - name: Restore dependencies
+        run: dotnet restore Source/CompanyCommunicator.sln
+
       - name: Build the project
-        working-directory: Source/CompanyCommunicator
-        run: dotnet publish -c Release -o ./output
+        run: dotnet publish Source/CompanyCommunicator/CompanyCommunicator.csproj -c Release -r win-x64 --self-contained true -o ./output
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/CompanyCommunicator/output
+          package: ./output
           publish-profile: ${{ secrets.AzureAppService_PublishProfile }}
-          slot-name: production
