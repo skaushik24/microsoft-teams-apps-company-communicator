@@ -29,9 +29,7 @@ jobs:
           npm install
           npm run build
 
-      - name: 📁 Clean + copy React build to wwwroot (for .NET publish)
-        # This step prepares the wwwroot for dotnet publish to pick up.
-        # Even if dotnet publish doesn't include it, the next step will ensure it's there.
+      - name: 📁 Clean + copy React build to wwwroot
         run: |
           $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
           if (Test-Path $wwwrootPath) {
@@ -40,45 +38,31 @@ jobs:
           New-Item -ItemType Directory -Path $wwwrootPath
           Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination $wwwrootPath -Recurse -Force
 
-      - name: 🔍 List wwwroot contents after React build (debug)
-        # Verify that React files are correctly copied to the wwwroot in the runner
-        run: Get-ChildItem -Path Source/CompanyCommunicator/wwwroot -Recurse
-
       - name: 🔨 Publish .NET project
         working-directory: Source/CompanyCommunicator
-        run: |
-          dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
+        run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
       - name: 📁 Ensure React build is in publish output
-        # This crucial step explicitly copies the React build into the final publish output's wwwroot.
-        # This guarantees that the frontend files are part of the package deployed to Azure.
         run: |
           $sourceWwwroot = "Source/CompanyCommunicator/wwwroot"
           $destinationWwwroot = "Source/CompanyCommunicator/output/wwwroot"
-          
-          # Create the destination wwwroot directory if it doesn't exist within the output
           if (-not (Test-Path $destinationWwwroot)) {
             New-Item -ItemType Directory -Path $destinationWwwroot
-          } else {
-            # Clear existing contents to ensure a clean copy
-            Remove-Item -Recurse -Force $destinationWwwroot\*
           }
-          
-          # Copy all contents from the source wwwroot (with React build) to the destination
-          Copy-Item -Path $sourceWwwroot\* -Destination $destinationWwwroot -Recurse -Force
+          Remove-Item -Recurse -Force "$destinationWwwroot\*" -ErrorAction SilentlyContinue
+          Copy-Item -Path "$sourceWwwroot\*" -Destination $destinationWwwroot -Recurse -Force
 
-      - name: 🔍 List output contents (debug)
-        # Verify the final structure of the 'output' directory before zipping,
-        # ensuring 'wwwroot' with React files is present.
-        run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
+      - name: 📦 Zip publish output (flattened for Azure)
+        run: Compress-Archive -Path Source/CompanyCommunicator/output/* -DestinationPath publish.zip
 
-      - name: 📦 Zip publish output
-        working-directory: Source/CompanyCommunicator/output
-        run: Compress-Archive -Path * -DestinationPath ../../publish.zip
+      - name: ✅ Confirm ZIP contents (debug)
+        run: |
+          Expand-Archive -Path publish.zip -DestinationPath tempZipCheck
+          Get-ChildItem -Path tempZipCheck -Recurse
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/publish.zip
+          package: publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
