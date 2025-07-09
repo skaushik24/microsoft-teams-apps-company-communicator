@@ -23,7 +23,7 @@ jobs:
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -r win-x64 --self-contained true -o ./output
 
       - name: List output folder contents (for debug)
-        run: dir Source\CompanyCommunicator\output /s
+        run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
