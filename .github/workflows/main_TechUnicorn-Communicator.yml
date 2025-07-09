@@ -29,9 +29,12 @@ jobs:
           npm install
           npm run build
 
-      - name: 📁 Copy React build to wwwroot
+      - name: 📁 Clean + copy React build to wwwroot
         run: |
-          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue Source/CompanyCommunicator/wwwroot/*
+          if (Test-Path Source/CompanyCommunicator/wwwroot) {
+            Remove-Item -Recurse -Force Source/CompanyCommunicator/wwwroot
+          }
+          New-Item -ItemType Directory -Path Source/CompanyCommunicator/wwwroot
           Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination Source/CompanyCommunicator/wwwroot -Recurse -Force
 
       - name: 🔨 Publish .NET project
