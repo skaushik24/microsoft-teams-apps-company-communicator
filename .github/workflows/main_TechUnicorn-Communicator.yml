@@ -5,9 +5,6 @@ on:
     branches:
       - main
 
-env:
-  AZURE_RG: TechUnicorn-Communicator    # 👈 Use your real RG name
-
 jobs:
   build:
     runs-on: windows-latest
@@ -26,35 +23,51 @@ jobs:
         with:
           node-version: '18'
 
-      - name: ⚛️ Build React frontend
+      - name: 📦 Clean install with react-scripts
         working-directory: Source/CompanyCommunicator/ClientApp
         run: |
-          npm ci
+          Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
+          npm install --force
+          npm install react-scripts --save-dev --force
           npm run build
 
       - name: 📁 Copy React build to wwwroot
         run: |
-          $src = "Source/CompanyCommunicator/ClientApp/build"
-          $dst = "Source/CompanyCommunicator/wwwroot"
-          Remove-Item -Recurse -Force $dst -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path $dst
-          Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
+          $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
+          if (Test-Path $wwwrootPath) {
+            Remove-Item -Recurse -Force $wwwrootPath
+          }
+          New-Item -ItemType Directory -Path $wwwrootPath
+          Copy-Item -Path Source/CompanyCommunicator/ClientApp/build/* -Destination $wwwrootPath -Recurse -Force
 
-      - name: 🔨 Publish .NET app
+      - name: 🔨 Publish .NET project
         working-directory: Source/CompanyCommunicator
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 🧩 Zip publish output (flattened)
+      - name: 🧩 Ensure React build in publish output
+        run: |
+          $src = "Source/CompanyCommunicator/wwwroot"
+          $dst = "Source/CompanyCommunicator/output/wwwroot"
+          if (-Not (Test-Path $dst)) {
+            New-Item -ItemType Directory -Path $dst
+          }
+          Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
+          Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
+
+      - name: 🔍 Check output before zipping
+        run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
+
+      - name: 📦 Create ZIP for deployment
         working-directory: Source/CompanyCommunicator/output
         run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
 
-      - name: 🚫 Disable Oryx build so ZIP is extracted
+      - name: 🔧 Disable Oryx extraction
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az webapp config appsettings set \
               --name TechUnicorn-Communicator \
-              --resource-group ${{ env.AZURE_RG }} \
+              --resource-group companycomm-tu-dev-rg \
               --settings ENABLE_ORYX_BUILD=false
 
       - name: 🚀 Deploy to Azure Web App
