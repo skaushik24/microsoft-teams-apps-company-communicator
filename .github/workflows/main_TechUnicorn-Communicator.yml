@@ -20,7 +20,7 @@ jobs:
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: '16'
 
       - name: ❌ Remove old lock file
         run: Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
