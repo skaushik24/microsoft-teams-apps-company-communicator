@@ -60,14 +60,14 @@ jobs:
       #   run: Get-ChildItem -Path Source/CompanyCommunicator/output/wwwroot -Recurse
         
       - name: 📦 Create ZIP for deployment
-        working-directory: Source/CompanyCommunicator/output/wwwroot
+        working-directory: Source/CompanyCommunicator/output/ClientApp/build
         run: Compress-Archive -Path * -DestinationPath  publish.zip -Force
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
-          package: Source/CompanyCommunicator/output/wwwroot/publish.zip
+          package: Source/CompanyCommunicator/output/ClientApp/build/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
   # set-oryx-flag:
