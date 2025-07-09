@@ -60,7 +60,7 @@ jobs:
         run: Get-ChildItem -Path Source/CompanyCommunicator/output/wwwroot -Recurse
         
       - name: 📦 Create ZIP for deployment
-        working-directory: Source/CompanyCommunicator/output
+        working-directory: Source/CompanyCommunicator/output/wwwroot
         run: Compress-Archive -Path * -DestinationPath  publish.zip -Force
 
       - name: 🚀 Deploy to Azure Web App
