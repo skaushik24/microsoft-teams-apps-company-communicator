@@ -23,12 +23,13 @@ jobs:
         with:
           node-version: '18'
 
-      - name: 📦 Clean install with react-scripts
+      - name: ❌ Remove old lock file
+        run: Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
+
+      - name: ⚛️ Build React frontend
         working-directory: Source/CompanyCommunicator/ClientApp
         run: |
-          Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
           npm install --force
-          npm install react-scripts --save-dev --force
           npm run build
 
       - name: 📁 Copy React build to wwwroot
@@ -44,7 +45,7 @@ jobs:
         working-directory: Source/CompanyCommunicator
         run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 🧩 Ensure React build in publish output
+      - name: 🧩 Copy React into publish output
         run: |
           $src = "Source/CompanyCommunicator/wwwroot"
           $dst = "Source/CompanyCommunicator/output/wwwroot"
@@ -54,14 +55,14 @@ jobs:
           Remove-Item -Recurse -Force "$dst\*" -ErrorAction SilentlyContinue
           Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
 
-      - name: 🔍 Check output before zipping
+      - name: 🔍 Debug contents before zipping
         run: Get-ChildItem -Path Source/CompanyCommunicator/output -Recurse
 
       - name: 📦 Create ZIP for deployment
         working-directory: Source/CompanyCommunicator/output
         run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
 
-      - name: 🔧 Disable Oryx extraction
+      - name: 🚫 Disable Oryx to extract zip to wwwroot
         uses: azure/CLI@v1
         with:
           inlineScript: |
