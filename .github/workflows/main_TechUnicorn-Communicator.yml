@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  AZURE_RG: TechUnicorn-Communicator    # 👈 Use your real RG name
+
 jobs:
   build:
     runs-on: windows-latest
@@ -26,29 +29,37 @@ jobs:
       - name: ⚛️ Build React frontend
         working-directory: Source/CompanyCommunicator/ClientApp
         run: |
-          npm install
+          npm ci
           npm run build
 
-      - name: 🧹 Clean and prepare wwwroot
+      - name: 📁 Copy React build to wwwroot
         run: |
-          $wwwrootPath = "Source/CompanyCommunicator/wwwroot"
-          if (Test-Path $wwwrootPath) {
-            Remove-Item -Recurse -Force $wwwrootPath
-          }
-          New-Item -ItemType Directory -Path $wwwrootPath | Out-Null
-          Copy-Item -Path "Source/CompanyCommunicator/ClientApp/build/*" -Destination $wwwrootPath -Recurse -Force
+          $src = "Source/CompanyCommunicator/ClientApp/build"
+          $dst = "Source/CompanyCommunicator/wwwroot"
+          Remove-Item -Recurse -Force $dst -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $dst
+          Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
 
       - name: 🔨 Publish .NET app
         working-directory: Source/CompanyCommunicator
-        run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ../../publish
+        run: dotnet publish Microsoft.Teams.Apps.CompanyCommunicator.csproj -c Release -o ./output
 
-      - name: 📦 Zip published app
-        working-directory: publish
-        run: Compress-Archive -Path * -DestinationPath ../publish.zip -Force
+      - name: 🧩 Zip publish output (flattened)
+        working-directory: Source/CompanyCommunicator/output
+        run: Compress-Archive -Path * -DestinationPath ../../publish.zip -Force
+
+      - name: 🚫 Disable Oryx build so ZIP is extracted
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config appsettings set \
+              --name TechUnicorn-Communicator \
+              --resource-group ${{ env.AZURE_RG }} \
+              --settings ENABLE_ORYX_BUILD=false
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: TechUnicorn-Communicator
+          package: Source/publish.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: publish.zip
